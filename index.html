@@ -17,10 +17,6 @@
     </style>
 </head>
 <body>
-    <div id="controls">
-        <input type="text" id="end" placeholder="End location" />
-        <button onclick="route()">Show Route</button>
-    </div>
     <div id="map"></div>
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
@@ -39,32 +35,15 @@
             geocoder: geocoder
         }).addTo(map);
 
-        function route() {
-            var end = document.getElementById('end').value;
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(function(position) {
-                    var startLatLng = L.latLng(position.coords.latitude, position.coords.longitude);
-                    geocoder.geocode(end, function(results) {
-                        if (results.length > 0) {
-                            var endLatLng = results[0].center;
-                            control.setWaypoints([startLatLng, endLatLng]);
-                        } else {
-                            alert('End location not found!');
-                        }
-                    });
-                }, function() {
-                    alert('Unable to retrieve your location');
-                });
-            } else {
-                alert('Geolocation is not supported by your browser');
-            }
-        }
+        var userLatLng;
 
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(function(position) {
-                var userLatLng = L.latLng(position.coords.latitude, position.coords.longitude);
+                userLatLng = L.latLng(position.coords.latitude, position.coords.longitude);
                 map.setView(userLatLng, 13);
                 L.marker(userLatLng).addTo(map).bindPopup('You are here').openPopup();
+                // Set the user's location as the starting point
+                control.setWaypoints([userLatLng]);
             }, function() {
                 alert('Unable to retrieve your location');
             });
@@ -73,15 +52,12 @@
         }
 
         map.on('click', function(e) {
-            var waypoints = control.getWaypoints();
-            if (waypoints.length === 0 || waypoints[0].latLng == null) {
-                waypoints[0] = { latLng: e.latlng };
-            } else if (waypoints.length === 1 || waypoints[1].latLng == null) {
-                waypoints[1] = { latLng: e.latlng };
+            if (userLatLng) {
+                // Set the user's location as the starting point and the clicked location as the ending point
+                control.setWaypoints([userLatLng, e.latlng]);
             } else {
-                waypoints = [{ latLng: e.latlng }];
+                alert('User location not available');
             }
-            control.setWaypoints(waypoints);
         });
     </script>
 </body>
